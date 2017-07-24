@@ -94,17 +94,15 @@ class ReCaptchaViewHelper extends AbstractViewHelper implements SingletonInterfa
         }
 
         if (!$this->initialized) {
-            $key = $reCaptchaSettings['siteKey'];
             $this->initialized = true;
             $pageRenderer = $this->getPageRenderer();
             $pageRenderer->addJsFooterInlineCode(
                 'recaptcha',
                 '
 					var recaptchaCallback = function() {
-						for (var i = 1; i <= 1000; ++i) {
-							if (document.getElementById(\'g-recaptcha-\' + i)) {
-								grecaptcha.render(\'g-recaptcha-\' + i, {\'sitekey\' : \'' . $key . '\'});
-							}
+						var recaptchas = document.getElementsByClassName("g-recaptcha");
+						for(var i = 0; i < recaptchas.length; i++){
+							grecaptcha.render(recaptchas.item(i), {"sitekey": "' . $reCaptchaSettings['siteKey'] . '"});
 						}
 					};
 					/*]]>*/					
