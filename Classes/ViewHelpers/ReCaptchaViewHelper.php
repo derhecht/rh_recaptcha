@@ -28,93 +28,92 @@ use TYPO3\CMS\Frontend\Controller\TypoScriptFrontendController;
  * @package RH\RhRecaptcha\ViewHelpers
  * @author Richard Haeser <richardhaeser@gmail.com>
  */
-class ReCaptchaViewHelper extends AbstractViewHelper implements SingletonInterface
-{
-    /**
-     * @var bool
-     */
-    protected $initialized = false;
+class ReCaptchaViewHelper extends AbstractViewHelper implements SingletonInterface {
+	/**
+	 * @var bool
+	 */
+	protected $initialized = FALSE;
 
-    /**
-     * @var bool
-     */
-    protected $escapeOutput = false;
+	/**
+	 * @var bool
+	 */
+	protected $escapeOutput = FALSE;
 
-    /**
-     * @var ConfigurationManagerInterface
-     */
-    protected $configurationManager;
+	/**
+	 * @var ConfigurationManagerInterface
+	 */
+	protected $configurationManager;
 
-    /**
-     * @param ConfigurationManagerInterface $configurationManager
-     * @return void
-     */
-    public function injectConfigurationManager(ConfigurationManagerInterface $configurationManager)
-    {
-        $this->configurationManager = $configurationManager;
-    }
+	/**
+	 * @param ConfigurationManagerInterface $configurationManager
+	 * @return void
+	 */
+	public function injectConfigurationManager(ConfigurationManagerInterface $configurationManager) {
+		$this->configurationManager = $configurationManager;
+	}
 
-    /**
-     * Returns an instance of the page renderer
-     *
-     * @return PageRenderer
-     */
-    public function getPageRenderer()
-    {
-        if (TYPO3_MODE === 'BE') {
-            $pageRenderer = $this->getDocInstance()->getPageRenderer();
-        } else {
-            $pageRenderer = GeneralUtility::makeInstance(PageRenderer::class);
-        }
+	/**
+	 * Returns an instance of the page renderer
+	 *
+	 * @return PageRenderer
+	 */
+	public function getPageRenderer() {
+		if (TYPO3_MODE === 'BE') {
+			$pageRenderer = $this->getDocInstance()->getPageRenderer();
+		} else {
+			$pageRenderer = GeneralUtility::makeInstance(PageRenderer::class);
+		}
 
-        return $pageRenderer;
-    }
+		return $pageRenderer;
+	}
 
-    /**
-     * @return string
-     * @throws InvalidVariableException
-     */
-    public function render()
-    {
-        $fullTs = $this->configurationManager->getConfiguration(
-            ConfigurationManagerInterface::CONFIGURATION_TYPE_FULL_TYPOSCRIPT
-        );
-        $reCaptchaSettings = $fullTs['plugin.']['tx_powermail.']['settings.']['setup.']['reCAPTCHA.'];
+	/**
+	 * @return string
+	 * @throws InvalidVariableException
+	 */
+	public function render() {
+		$fullTs = $this->configurationManager->getConfiguration(
+			ConfigurationManagerInterface::CONFIGURATION_TYPE_FULL_TYPOSCRIPT
+		);
+		$reCaptchaSettings = $fullTs['plugin.']['tx_powermail.']['settings.']['setup.']['reCAPTCHA.'];
 
-        if (isset($reCaptchaSettings) &&
-            is_array($reCaptchaSettings) &&
-            isset($reCaptchaSettings['siteKey']) &&
-            $reCaptchaSettings['siteKey']
-        ) {
-            $this->templateVariableContainer->add('siteKey', $reCaptchaSettings['siteKey']);
-            $content = $this->renderChildren();
-            $this->templateVariableContainer->remove('siteKey');
-        } else {
-            throw new InvalidVariableException('No siteKey provided in TypoScript constants', 1358349150);
-        }
+		if (
+			isset($reCaptchaSettings) &&
+			is_array($reCaptchaSettings) &&
+			isset($reCaptchaSettings['siteKey']) &&
+			$reCaptchaSettings['siteKey']
+		) {
+			$this->templateVariableContainer->add('siteKey', $reCaptchaSettings['siteKey']);
+			$content = $this->renderChildren();
+			$this->templateVariableContainer->remove('siteKey');
+		} else {
+			throw new InvalidVariableException('No siteKey provided in TypoScript constants', 1358349150);
+		}
 
-        if (!$this->initialized) {
-            $this->initialized = true;
-            $pageRenderer = $this->getPageRenderer();
-            $pageRenderer->addJsFooterInlineCode(
-                'recaptcha',
-                '
+		if (!$this->initialized) {
+			$key = $reCaptchaSettings['siteKey'];
+			$this->initialized = TRUE;
+			$pageRenderer = $this->getPageRenderer();
+			$pageRenderer->addJsFooterInlineCode(
+				'recaptcha', '
 					var recaptchaCallback = function() {
 						var recaptchas = document.getElementsByClassName("g-recaptcha");
-						for(var i = 0; i < recaptchas.length; i++){
-							grecaptcha.render(recaptchas.item(i), {"sitekey": "' . $reCaptchaSettings['siteKey'] . '"});
+						for(var i = 0; i < recaptchas.length; i++)
+						{
+						   grecaptcha.render(recaptchas.item(i), {"sitekey": "' . $reCaptchaSettings['siteKey'] . '"});
 						}
 					};
-					/*]]>*/					
-					</script>
-					<script src="https://www.google.com/recaptcha/api.js?hl=' . $reCaptchaSettings['lang'] . '&onload=recaptchaCallback&render=explicit"
-						async defer data-ignore="1">/*<![CDATA[*/
-				',
-                false,
-                true
-            );
-        }
+				', FALSE, TRUE
+			);
 
-        return $content;
-    }
+
+			$pageRenderer->addJsFooterFile(
+				'https://www.google.com/recaptcha/api.js?hl=' . $reCaptchaSettings['lang'] . '&onload=recaptchaCallback&render=explicit',
+				'text/javascript', FALSE, FALSE, '', TRUE,null,TRUE,null
+			);
+		}
+
+		return $content;
+	}
+
 }
